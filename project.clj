@@ -7,6 +7,8 @@
                  [ring "1.4.0"]
                  [compojure "1.4.0"]
                  [ring/ring-defaults "0.1.5"]
+                 [ring-logger "0.7.5"]
+                 [com.taoensso/timbre "4.1.4"]
                  [org.springframework/spring-beans "4.2.3.RELEASE"]
                  [org.springframework.security/spring-security-web
                    "4.0.3.RELEASE"]
