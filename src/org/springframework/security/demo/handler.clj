@@ -8,11 +8,12 @@
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [ring.logger :refer [wrap-with-logger]]
             [ring.logger.protocols :refer [Logger]]
-            [taoensso.timbre :refer [merge-config!] :as timbre]
+            [taoensso.timbre :refer [merge-config! swap-config!] :as timbre]
             [taoensso.timbre.appenders.core :refer [spit-appender]])
   (:import [org.springframework.web.context.support
              WebApplicationContextUtils AnnotationConfigWebApplicationContext]
-           org.springframework.security.demo.SecurityAnnotationConfiguration
+           org.eclipse.jetty.annotations.AnnotationConfiguration
+           org.eclipse.jetty.util.resource.Resource
            [org.eclipse.jetty.webapp WebAppContext Configuration]
            [org.eclipse.jetty.servlet ServletContextHandler ServletHolder]))
 
@@ -22,6 +23,7 @@
 (defonce portnumber 8080)
 (defonce hostname "localhost") 
 (defonce logfile-path "file.log")
+(defonce pkg-name "org.springframework.security.demo")
 
 ;application
 
@@ -41,7 +43,9 @@
        (appender))})
 
 (defn- make-timbrelogger [appender & [options]]
-  (do (merge-config! 
+  (do (swap-config! 
+        #(assoc-in % [:appenders :println :async?] true)) 
+      (merge-config! 
         {:appenders
            (if options 
              (make-appender-options appender options)
@@ -54,20 +58,31 @@
 (defmacro defspitloggergenerator [name# fpath#]
   `(defn ~name# []
      (make-timbrelogger spit-appender 
-                        {:fname ~fpath#})))          
+                        {:fname ~fpath#
+                         :async? true})))          
 
 (defspitloggergenerator gen-spitter logfile-path)
 (def spitter (gen-spitter)) 
 
 ;appserver-security
 
+(defn- add-container-resources! [context config]
+  (let [metadata (. context getMetaData)] 
+    (loop [urls (.. config getClass getClassLoader getURLs)]
+      (when-not (empty? urls)
+        (do (. metadata addContainerResource
+                        (Resource/newResource (first urls)))
+            (recur (rest urls)))))))
+
 (defn- create-handler [app]
-  (doto (WebAppContext.)
-    (.setConfigurations
-      (into-array Configuration [(SecurityAnnotationConfiguration.)]))
-    (.addServlet 
-      (doto (ServletHolder. (servlet app)) (.setName "default")) 
-      "/")))
+  (let [config (AnnotationConfiguration.)]
+    (doto (WebAppContext.)
+      (add-container-resources! config)
+      (.setConfigurations
+        (into-array Configuration [config]))
+      (.addServlet 
+        (doto (ServletHolder. (servlet app)) (.setName "default")) 
+        "/"))))
 
 (defn- build-spring-cfg [app]
   (fn [server]
