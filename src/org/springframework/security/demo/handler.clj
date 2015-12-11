@@ -1,4 +1,5 @@
 (ns org.springframework.security.demo.handler
+  (:gen-class)
   (:require [clojure.string :refer [split]] 
             [compojure.core :refer :all]
             [compojure.route :as route]
