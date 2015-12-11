@@ -107,3 +107,12 @@
     build-spring-cfg {:servname servername 
                       :port portnumber 
                       :host hostname}))
+
+;adapter for library use
+
+(defn wrap-with-spitter [app]
+  (wrap-with-logger app {:logger spitter}))
+
+(defn spring-jetty-run [app options]
+  (run-jetty-wrapper app build-spring-cfg options))
+                         
