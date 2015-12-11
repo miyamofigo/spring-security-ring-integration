@@ -19,6 +19,7 @@
                  [org.eclipse.jetty/jetty-servlet "9.2.14.v20151106"]
                  [org.eclipse.jetty/jetty-util "9.2.14.v20151106"]
                  [org.eclipse.jetty/jetty-webapp "9.2.14.v20151106"]]
+  :aot :all
   :main org.springframework.security.demo.handler
   :profiles
   {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
